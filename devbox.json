@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.18.4/.schema/devbox.schema.json",
+  "packages": [
+    "go@1.26",
+    "golangci-lint@2.14.0"
+  ],
+  "shell": {
+    "scripts": {
+      "test": "go test -race ./...",
+      "lint": "golangci-lint run ./...",
+      "fmt": "golangci-lint fmt ./...",
+      "fmt-check": "golangci-lint fmt --diff ./...",
+      "check": [
+        "devbox run fmt-check",
+        "devbox run lint",
+        "devbox run test"
+      ]
+    }
+  }
+}
