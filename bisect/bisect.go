@@ -153,10 +153,11 @@ func LastTrue[T Integer](lo, hi T, pred func(T) bool) T {
 // Float returns (an approximation of) the smallest x in [lo, hi] for which
 // pred(x) is true. pred must be monotone: false below some threshold and true
 // from it on. The search stops once hi-lo <= eps or when float64 precision
-// is exhausted (at most ~2100 halvings, even for the widest finite range), and returns the upper end of the final
-// interval, i.e. a value for which pred is known to be true unless pred was
-// false everywhere, in which case the original hi is returned. lo and hi
-// must be finite; any finite range works, even one wider than MaxFloat64.
+// is exhausted (at most ~2100 halvings, even for the widest finite range).
+// It returns the upper end of the final interval, i.e. a value for which
+// pred is known to be true unless pred was false everywhere, in which case
+// the original hi is returned. lo and hi must be finite; any finite range
+// works, even one wider than MaxFloat64.
 //
 // Example: the square root of 2 to 1e-9 precision:
 //

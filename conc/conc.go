@@ -88,8 +88,8 @@ func call(fn func() error, fail func(error)) {
 // is returned once all in-flight calls have finished; the result slice is nil
 // in that case. If ctx is done before all items have started, Map returns
 // ctx.Err(), unless an in-flight call failed first, in which case that
-// call's error is returned. Map never leaves goroutines running after it returns. With no
-// items it returns an empty slice and nil.
+// call's error is returned. Map never leaves goroutines running after it
+// returns. With no items it returns an empty slice and nil.
 func Map[T, R any](ctx context.Context, items []T, limit int, fn func(context.Context, T) (R, error)) ([]R, error) {
 	out := make([]R, len(items))
 	err := run(ctx, len(items), limit, func(ctx context.Context, i int) error {
