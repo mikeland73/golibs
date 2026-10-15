@@ -12,9 +12,9 @@
 // Panics in functions run by Map and ForEach are recovered and returned as a
 // *PanicError.
 //
-// Related tools that are deliberately not duplicated here:
-//   - golang.org/x/sync/errgroup (with SetLimit / TryGo) for open-ended groups
-//     of goroutines and worker pools;
+// Map and ForEach are built on golang.org/x/sync/errgroup; use errgroup
+// directly (with SetLimit / TryGo) for open-ended groups of goroutines and
+// worker pools. Other related tools that are deliberately not duplicated here:
 //   - golang.org/x/sync/semaphore for weighted concurrency limits;
 //   - golang.org/x/sync/singleflight for de-duplicating concurrent calls;
 //   - golang.org/x/time/rate for rate limiting;
@@ -30,6 +30,8 @@ import (
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // PanicError is the error returned by Map and ForEach when fn panics.
@@ -58,25 +60,24 @@ func (e *PanicError) Unwrap() error {
 
 var errGoexit = errors.New("conc: function called runtime.Goexit")
 
-// call runs fn and passes any error it returns to fail. A panic is passed as a
-// *PanicError. If fn calls runtime.Goexit, fail receives errGoexit before the
-// calling goroutine exits, so the failure is still observed.
-func call(fn func() error, fail func(error)) {
+// call runs fn and returns its error, or a *PanicError if fn panics. If fn
+// calls runtime.Goexit, onGoexit is called before the goroutine exits (and
+// call never returns), so the failure is still observed.
+func call(fn func() error, onGoexit func()) (err error) {
 	normal := false
 	defer func() {
-		if !normal {
-			if r := recover(); r != nil {
-				fail(&PanicError{Value: r, Stack: debug.Stack()})
-			} else {
-				fail(errGoexit)
-			}
+		if normal {
+			return
 		}
+		if r := recover(); r != nil {
+			err = &PanicError{Value: r, Stack: debug.Stack()}
+			return
+		}
+		onGoexit()
 	}()
-	err := fn()
+	err = fn()
 	normal = true
-	if err != nil {
-		fail(err)
-	}
+	return err
 }
 
 // Map calls fn on every item concurrently, with at most limit calls in
@@ -112,48 +113,47 @@ func ForEach[T any](ctx context.Context, items []T, limit int, fn func(context.C
 	})
 }
 
-// run calls fn(ctx, i) for i in [0, n) using at most limit workers.
+// run calls fn(ctx, i) for i in [0, n) with at most limit calls in flight,
+// on top of errgroup (which cancels ctx on the first error).
 func run(ctx context.Context, n, limit int, fn func(context.Context, int) error) error {
-	if n == 0 {
-		return nil
+	parent := ctx
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+	g, ctx := errgroup.WithContext(ctx)
+	if limit > 0 {
+		g.SetLimit(limit)
 	}
-	if limit <= 0 || limit > n {
-		limit = n
-	}
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	var (
-		once     sync.Once
-		firstErr error
-		next     atomic.Int64
-		wg       sync.WaitGroup
-	)
-	fail := func(err error) {
-		once.Do(func() {
-			firstErr = err
-			cancel()
-		})
-	}
-	for range limit {
-		wg.Go(func() {
-			for {
-				i := int(next.Add(1) - 1)
-				if i >= n {
-					return
-				}
-				if err := ctx.Err(); err != nil {
-					// Either a previous call failed (firstErr already set) or
-					// the parent ctx is done.
-					fail(err)
-					return
-				}
-				call(func() error { return fn(ctx, i) }, fail)
+	// errgroup never sees an error from a goroutine that called Goexit, so
+	// record it here and cancel the remaining calls ourselves.
+	var goexited atomic.Bool
+	var ran atomic.Int64
+	for i := range n {
+		if ctx.Err() != nil {
+			break // a call failed or the parent ctx is done
+		}
+		g.Go(func() error {
+			// g.Go may have waited for a free slot; don't start new work
+			// once a call has failed or the parent ctx is done.
+			if ctx.Err() != nil {
+				return nil
 			}
+			ran.Add(1)
+			return call(func() error { return fn(ctx, i) }, func() {
+				goexited.Store(true)
+				cancel(errGoexit)
+			})
 		})
 	}
-	wg.Wait()
-	return firstErr
+	if err := g.Wait(); err != nil {
+		return err
+	}
+	if goexited.Load() {
+		return errGoexit
+	}
+	if int(ran.Load()) < n {
+		return parent.Err()
+	}
+	return nil
 }
 
 // Mutex holds a value of type T guarded by a sync.Mutex, in the spirit of

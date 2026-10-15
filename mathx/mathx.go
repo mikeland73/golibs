@@ -16,44 +16,27 @@
 //
 // Not included because they already exist: min/max (builtins), lo.Sum,
 // lo.Mean, lo.Clamp, lo.Max/lo.Min, math/bits (bit counting, 128-bit
-// multiply), math/big (arbitrary precision).
+// multiply), math/big (arbitrary precision), golang.org/x/exp/stats (median,
+// quantiles, standard deviation).
 package mathx
 
 import (
 	"math"
 	"math/bits"
+
+	"golang.org/x/exp/constraints"
 )
-
-// Signed is the set of signed integer types.
-type Signed interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64
-}
-
-// Unsigned is the set of unsigned integer types.
-type Unsigned interface {
-	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
-}
-
-// Integer is the set of all integer types.
-type Integer interface {
-	Signed | Unsigned
-}
-
-// Float is the set of floating-point types.
-type Float interface {
-	~float32 | ~float64
-}
 
 // Number is the set of all integer and floating-point types.
 type Number interface {
-	Integer | Float
+	constraints.Integer | constraints.Float
 }
 
 // Abs returns the absolute value of x. For signed integers, the absolute
 // value of the most negative value overflows and is returned unchanged
 // (e.g. Abs(math.MinInt64) == math.MinInt64), as in two's complement
 // arithmetic. For floats prefer math.Abs if you need -0 handling.
-func Abs[T Signed | Float](x T) T {
+func Abs[T constraints.Signed | constraints.Float](x T) T {
 	if x < 0 {
 		return -x
 	}
@@ -75,7 +58,7 @@ func Sign[T Number](x T) int {
 // Pow returns base**exp using exponentiation by squaring in O(log exp)
 // multiplications. Pow(x, 0) == 1 for every x (including 0). The result
 // wraps on overflow. It panics if exp < 0.
-func Pow[T Integer](base T, exp int) T {
+func Pow[T constraints.Integer](base T, exp int) T {
 	if exp < 0 {
 		panic("mathx: Pow called with negative exponent")
 	}
@@ -98,7 +81,7 @@ func mulMod(a, b, m uint64) uint64 {
 }
 
 // toUnsignedMod converts x to an equivalent value in [0, mod) as a uint64.
-func toUnsignedMod[T Integer](x, mod T) uint64 {
+func toUnsignedMod[T constraints.Integer](x, mod T) uint64 {
 	return uint64(Mod(x, mod))
 }
 
@@ -109,7 +92,7 @@ func toUnsignedMod[T Integer](x, mod T) uint64 {
 // representable by T, including moduli near math.MaxInt64 / math.MaxUint64.
 //
 // It panics if mod <= 0 or exp < 0.
-func ModPow[T Integer](base, exp, mod T) T {
+func ModPow[T constraints.Integer](base, exp, mod T) T {
 	if mod <= 0 {
 		panic("mathx: ModPow called with non-positive modulus")
 	}
@@ -134,7 +117,7 @@ func ModPow[T Integer](base, exp, mod T) T {
 // (like Python's math.gcd). GCD(0, 0) == 0 and GCD(x, 0) == |x|. It runs in
 // O(log min(a, b)) time. Like Abs, it overflows (returns a negative value)
 // when the result would be -MinInt, e.g. GCD(math.MinInt64, 0).
-func GCD[T Integer](a, b T) T {
+func GCD[T constraints.Integer](a, b T) T {
 	for b != 0 {
 		a, b = b, a%b
 	}
@@ -146,7 +129,7 @@ func GCD[T Integer](a, b T) T {
 
 // LCM returns the least common multiple of a and b, always non-negative
 // (like Python's math.lcm). LCM(x, 0) == 0. The result wraps on overflow.
-func LCM[T Integer](a, b T) T {
+func LCM[T constraints.Integer](a, b T) T {
 	if a == 0 || b == 0 {
 		return 0
 	}
@@ -160,7 +143,7 @@ func LCM[T Integer](a, b T) T {
 // FloorDiv returns a/b rounded toward negative infinity, like Python's a // b.
 // Go's a / b truncates toward zero instead: -7/2 == -3 but
 // FloorDiv(-7, 2) == -4. It panics if b == 0.
-func FloorDiv[T Integer](a, b T) T {
+func FloorDiv[T constraints.Integer](a, b T) T {
 	q := a / b
 	if a%b != 0 && (a < 0) != (b < 0) {
 		q--
@@ -170,7 +153,7 @@ func FloorDiv[T Integer](a, b T) T {
 
 // CeilDiv returns a/b rounded toward positive infinity: CeilDiv(7, 2) == 4,
 // CeilDiv(-7, 2) == -3. It panics if b == 0.
-func CeilDiv[T Integer](a, b T) T {
+func CeilDiv[T constraints.Integer](a, b T) T {
 	q := a / b
 	if a%b != 0 && (a < 0) == (b < 0) {
 		q++
@@ -182,7 +165,7 @@ func CeilDiv[T Integer](a, b T) T {
 // FloorDiv(a, b)*b + Mod(a, b) == a. For b > 0 the result is always in
 // [0, b), which makes it the right choice for wrapping indices:
 // Mod(-1, n) == n-1 whereas Go's -1 % n == -1. It panics if b == 0.
-func Mod[T Integer](a, b T) T {
+func Mod[T constraints.Integer](a, b T) T {
 	r := a % b
 	if r != 0 && (r < 0) != (b < 0) {
 		r += b
@@ -194,7 +177,7 @@ func Mod[T Integer](a, b T) T {
 // integer type including values near math.MaxInt64 and math.MaxUint64 where
 // float64 rounding would give the wrong answer. Like Python's math.isqrt.
 // It panics if n < 0.
-func Isqrt[T Integer](n T) T {
+func Isqrt[T constraints.Integer](n T) T {
 	if n < 0 {
 		panic("mathx: Isqrt called with negative number")
 	}
@@ -218,7 +201,7 @@ func isqrt64(n uint64) uint64 {
 // values, using trial division by small primes followed by a deterministic
 // Miller-Rabin test, so it runs in O(log^3 n) time rather than O(sqrt n).
 // Numbers less than 2 are not prime.
-func IsPrime[T Integer](n T) bool {
+func IsPrime[T constraints.Integer](n T) bool {
 	if n < 2 {
 		return false
 	}

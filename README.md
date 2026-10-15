@@ -5,9 +5,8 @@ concurrency utilities, and printing/assertion helpers that fill gaps in the
 Go standard library.
 
 - **Go 1.26+.**
-- **No dependencies.** Every package uses only the standard library and none
-  imports another package from this repo, so each one stands alone. You can
-  `go get` the module or copy a single package's source file into your project.
+- **Self-contained.** No package imports another package from this repo, so
+  each one stands alone.
 - **Does not overlap** with the standard library, `golang.org/x/...`, or
   [`samber/lo`](https://github.com/samber/lo). Where one of those already covers
   something, this README points to it instead (see [Not included](#not-included-and-where-to-find-it)).
@@ -87,6 +86,8 @@ cost of each operation. Runnable examples are in each package's `example_test.go
 | --- | --- |
 | Map / filter / reduce, uniq, group by, chunk, flatten, zip, partition, keys/values | [`samber/lo`](https://github.com/samber/lo) (`lo.Map`, `lo.Filter`, `lo.Reduce`, `lo.Uniq`, `lo.GroupBy`, `lo.Chunk`, `lo.Zip2`, ...) |
 | Sum / min / max / clamp / range | builtin `min`/`max`, `slices.Min`/`slices.Max`, `lo.Sum`, `lo.Clamp`, `lo.Range` |
+| Mean / median / quantiles / standard deviation | [`golang.org/x/exp/stats`](https://pkg.go.dev/golang.org/x/exp/stats) |
+| Numeric type constraints (`Integer`, `Float`, ...) | [`golang.org/x/exp/constraints`](https://pkg.go.dev/golang.org/x/exp/constraints) |
 | Tuples / pairs (including as map keys) | `lo.T2(a, b)` (`lo.Tuple2` is comparable), or an anonymous struct |
 | Cartesian product of different slices | `lo.CrossJoin2` ... `lo.CrossJoin9` |
 | Pointer to a value | Go 1.26 `new(expr)`, or `lo.ToPtr` |
@@ -100,7 +101,7 @@ cost of each operation. Runnable examples are in each package's `example_test.go
 | String building, splitting, iterating lines/fields | `strings.Builder`, `strings.Fields`, `strings.SplitSeq`, `strings.Lines` |
 | Iterator plumbing | [`iter`](https://pkg.go.dev/iter), `slices.Collect`, `slices.Sorted`, `maps.Keys`, `maps.Values` |
 | Wait for goroutines | `sync.WaitGroup.Go` (Go 1.25+) |
-| Goroutine group with errors / concurrency limit | [`golang.org/x/sync/errgroup`](https://pkg.go.dev/golang.org/x/sync/errgroup) (`SetLimit`, `TryGo`) |
+| Goroutine group with errors / concurrency limit | [`golang.org/x/sync/errgroup`](https://pkg.go.dev/golang.org/x/sync/errgroup) (`SetLimit`, `TryGo`); `conc.Map`/`ForEach` build on it for ordered results and panic recovery |
 | Weighted semaphore | [`golang.org/x/sync/semaphore`](https://pkg.go.dev/golang.org/x/sync/semaphore), or a buffered channel |
 | Deduplicate concurrent calls | [`golang.org/x/sync/singleflight`](https://pkg.go.dev/golang.org/x/sync/singleflight) |
 | Rate limiting | [`golang.org/x/time/rate`](https://pkg.go.dev/golang.org/x/time/rate) |

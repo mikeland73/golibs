@@ -14,8 +14,8 @@ devbox run check  # fmt-check + lint + race tests; must pass before committing (
 
 ## Rules
 
-- **Standard library only.** No third-party or `golang.org/x` imports, and no
-  imports between packages in this repo. Each package must stand alone.
+- **Self-contained packages.** No imports between packages in this repo; each
+  package must stand alone.
 - **No duplication** of the standard library, `golang.org/x/*`, or
   `samber/lo`. If something already exists there, point to it in the docs (see
   the README's "Not included" table) instead of re-implementing it.

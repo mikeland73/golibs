@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"math/bits"
 	"slices"
+
+	"golang.org/x/exp/constraints"
 )
 
 // Number is the set of integer and floating-point types a Tree can hold.
 type Number interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
-		~float32 | ~float64
+	constraints.Integer | constraints.Float
 }
 
 // Tree is a Fenwick tree over a fixed-length array of numbers.

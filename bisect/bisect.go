@@ -25,13 +25,9 @@ package bisect
 import (
 	"cmp"
 	"slices"
-)
 
-// Integer is a constraint matching all integer types.
-type Integer interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
-}
+	"golang.org/x/exp/constraints"
+)
 
 // Left returns the first index i such that s[i] >= x, or len(s) if there is
 // none. s must be sorted in ascending order. Inserting x at the returned index
@@ -122,7 +118,7 @@ func CountRange[S ~[]E, E cmp.Ordered](s S, lo, hi E) int {
 // This is "binary search on the answer". Any range of any integer type works,
 // including negative bounds and the full range of int64, without overflow.
 // pred is called O(log(hi-lo)) times.
-func FirstTrue[T Integer](lo, hi T, pred func(T) bool) T {
+func FirstTrue[T constraints.Integer](lo, hi T, pred func(T) bool) T {
 	for lo < hi {
 		// floor((lo+hi)/2) without overflow; >> is arithmetic for signed T.
 		mid := (lo & hi) + (lo^hi)>>1
@@ -143,7 +139,7 @@ func FirstTrue[T Integer](lo, hi T, pred func(T) bool) T {
 // Note that lo-1 wraps around if lo is the minimum value of T (for example 0
 // for unsigned types); pick lo so that lo-1 is representable if you need to
 // detect "none". pred is called O(log(hi-lo)) times.
-func LastTrue[T Integer](lo, hi T, pred func(T) bool) T {
+func LastTrue[T constraints.Integer](lo, hi T, pred func(T) bool) T {
 	if hi < lo {
 		return lo - 1
 	}

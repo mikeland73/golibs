@@ -23,14 +23,14 @@ import (
 	"container/heap"
 	"iter"
 	"strconv"
+
+	"golang.org/x/exp/constraints"
 )
 
 // Number is a constraint matching all integer and floating-point types.
 // It is used for edge weights.
 type Number interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
-		~float32 | ~float64
+	constraints.Integer | constraints.Float
 }
 
 // Edge is a weighted edge to node To, as returned by the neighbors function
