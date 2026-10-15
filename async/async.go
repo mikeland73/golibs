@@ -3,8 +3,8 @@
 // such as All, AllSettled, Race, Any and Then.
 //
 // Unlike lo.Async, which returns a bare channel, a Future carries an error,
-// recovers panics (as *conc.PanicError), can be awaited any number of times from
-// any number of goroutines, and can be awaited with a context:
+// recovers panics (as a *conc.PanicError), can be awaited any number of
+// times from any number of goroutines, and can be awaited with a context:
 //
 //	user := async.Go(func() (User, error) { return fetchUser(id) })
 //	posts := async.GoCtx(ctx, func(ctx context.Context) ([]Post, error) { return fetchPosts(ctx, id) })
