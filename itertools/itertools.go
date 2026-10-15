@@ -27,13 +27,8 @@ import (
 	"iter"
 	"slices"
 
-	"golang.org/x/exp/constraints"
+	"github.com/mikeland73/golibs/mathx"
 )
-
-// Number is the set of integer and floating-point types.
-type Number interface {
-	constraints.Integer | constraints.Float
-}
 
 func checkR(fn string, r int) {
 	if r < 0 {
@@ -286,7 +281,7 @@ func Accumulate[T any](s []T, f func(acc, x T) T) []T {
 //
 //	p := PrefixSums(s)
 //	sum(s[i:j]) == p[j] - p[i]
-func PrefixSums[T Number](s []T) []T {
+func PrefixSums[T mathx.Number](s []T) []T {
 	p := make([]T, len(s)+1)
 	for i, x := range s {
 		p[i+1] = p[i] + x

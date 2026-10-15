@@ -107,15 +107,21 @@ func TestEqualMessage(t *testing.T) {
 	buf := capture(t)
 	line := thisLine() + 1
 	Equal([]int{1, 2}, []int{1, 3}, "case %d", 7)
-	want := fmt.Sprintf("assert.Equal failed at assert_test.go:%d: case 7\n  got:  []int{1, 2}\n  want: []int{1, 3}\n", line)
+	want := fmt.Sprintf("assert.Equal failed at assert_test.go:%d: case 7\n  got:  [1, 2]\n  want: [1, 3]\n", line)
 	if buf.String() != want {
 		t.Errorf("got:\n%s\nwant:\n%s", buf.String(), want)
 	}
 
 	buf.Reset()
 	Equal(&point{1, 2}, &point{3, 4})
-	if !strings.Contains(buf.String(), "got:  &assert.point{X:1, Y:2}") {
+	if !strings.Contains(buf.String(), "got:  point{X: 1, Y: 2}") {
 		t.Errorf("pointer formatting: %s", buf.String())
+	}
+
+	buf.Reset()
+	Equal[any](1, int64(1))
+	if out := buf.String(); !strings.Contains(out, "got:  1 (int)") || !strings.Contains(out, "want: 1 (int64)") {
+		t.Errorf("same text, different types: %s", out)
 	}
 
 	buf.Reset()
@@ -322,8 +328,8 @@ func TestElementsMatch(t *testing.T) {
 	buf.Reset()
 	ElementsMatch([]string{"a", "a", "b"}, []string{"a", "c"})
 	out := buf.String()
-	if !strings.Contains(out, `extra (in got, not in want):   []string{"a", "b"}`) ||
-		!strings.Contains(out, `missing (in want, not in got): []string{"c"}`) {
+	if !strings.Contains(out, `extra (in got, not in want):   ["a", "b"]`) ||
+		!strings.Contains(out, `missing (in want, not in got): ["c"]`) {
 		t.Errorf("message:\n%s", out)
 	}
 }
@@ -411,13 +417,13 @@ func TestShowPointerCycle(t *testing.T) {
 		t.Error("expected failure")
 	}
 	out := buf.String()
-	if !strings.Contains(out, "got:  &<cycle>") || !strings.Contains(out, "want: &3") {
+	if !strings.Contains(out, "got:  <cycle>") || !strings.Contains(out, "want: 3") {
 		t.Errorf("message:\n%s", out)
 	}
 	p := new(any)
 	q := new(any)
 	*p, *q = q, p
-	if got := show(p); got != "&&<cycle>" {
+	if got := show(p); got != "<cycle>" {
 		t.Errorf("2-cycle: %s", got)
 	}
 }
@@ -450,7 +456,7 @@ func TestElementsMatchNaN(t *testing.T) {
 	}
 	buf.Reset()
 	ElementsMatch([]float64{nan}, []float64{nan, nan})
-	if !strings.Contains(buf.String(), "missing (in want, not in got): []float64{NaN}") {
+	if !strings.Contains(buf.String(), "missing (in want, not in got): [NaN]") {
 		t.Errorf("message:\n%s", buf.String())
 	}
 }
@@ -478,8 +484,8 @@ func TestElementsMatchUnhashable(t *testing.T) {
 	buf.Reset()
 	ElementsMatch([]any{[]int{1}, 2, []int{3}}, []any{[]int{3}, []int{4}})
 	out := buf.String()
-	if !strings.Contains(out, "extra (in got, not in want):   []interface {}{[]int{1}, 2}") ||
-		!strings.Contains(out, "missing (in want, not in got): []interface {}{[]int{4}}") {
+	if !strings.Contains(out, "extra (in got, not in want):   [[1], 2]") ||
+		!strings.Contains(out, "missing (in want, not in got): [[4]]") {
 		t.Errorf("message:\n%s", out)
 	}
 	// Pointers are compared by address, as with ==, even when the element
@@ -504,13 +510,13 @@ func TestShowContainerCycle(t *testing.T) {
 		t.Error("expected failure")
 	}
 	out := buf.String()
-	if !strings.Contains(out, "got:  []interface {}{<cycle>}") ||
-		!strings.Contains(out, "want: map[string]interface {}{<cycle>}") {
+	if !strings.Contains(out, "got:  [1, <cycle>]") ||
+		!strings.Contains(out, `want: {"m": <cycle>}`) {
 		t.Errorf("message:\n%s", out)
 	}
 	// Shared, non-cyclic sub-slices are printed normally.
 	sub := []int{7}
-	if got := show([][]int{sub, sub}); got != "[][]int{[]int{7}, []int{7}}" {
+	if got := show([][]int{sub, sub}); got != "[[7], [7]]" {
 		t.Errorf("shared: %s", got)
 	}
 }

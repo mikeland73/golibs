@@ -14,11 +14,10 @@ devbox run check  # fmt-check + lint + race tests; must pass before committing (
 
 ## Rules
 
-- **Self-contained packages.** No imports between packages in this repo; each
-  package must stand alone.
 - **No duplication** of the standard library, `golang.org/x/*`, or
   `samber/lo`. If something already exists there, point to it in the docs (see
-  the README's "Not included" table) instead of re-implementing it.
+  the README's "Not included" table) instead of re-implementing it. Within the
+  repo, import an existing package rather than copying its code.
 - **Go 1.26 max**, since some target environments don't have newer versions.
 - **Layout:** one package per top-level directory, usually `<pkg>.go`,
   `<pkg>_test.go` and `example_test.go`.

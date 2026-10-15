@@ -32,13 +32,8 @@ import (
 	"cmp"
 	"fmt"
 
-	"golang.org/x/exp/constraints"
+	"github.com/mikeland73/golibs/mathx"
 )
-
-// Number is the set of integer and floating-point types usable with NewSum.
-type Number interface {
-	constraints.Integer | constraints.Float
-}
 
 // Tree is a segment tree over a fixed-length array of values of type T.
 //
@@ -65,7 +60,7 @@ func New[T any](vals []T, identity T, combine func(a, b T) T) *Tree[T] {
 
 // NewSum returns a tree whose Query returns the sum of the range (0 for an
 // empty range). O(n).
-func NewSum[T Number](vals []T) *Tree[T] {
+func NewSum[T mathx.Number](vals []T) *Tree[T] {
 	return New(vals, 0, func(a, b T) T { return a + b })
 }
 

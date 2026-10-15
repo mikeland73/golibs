@@ -34,7 +34,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// PanicError is the error returned by Map and ForEach when fn panics.
+// PanicError is the error a recovered panic is reported as, by Map and
+// ForEach here and by futures in the async package.
 type PanicError struct {
 	// Value is the value passed to panic.
 	Value any
@@ -46,7 +47,7 @@ type PanicError struct {
 // Error implements the error interface. It reports the panic value but not
 // the stack; use the Stack field for that.
 func (e *PanicError) Error() string {
-	return fmt.Sprintf("conc: panic: %v", e.Value)
+	return fmt.Sprintf("panic: %v", e.Value)
 }
 
 // Unwrap returns the panic value if it is an error, so that errors.Is and

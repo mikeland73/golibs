@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/mikeland73/golibs/async"
+	"github.com/mikeland73/golibs/conc"
 )
 
 func ExampleGo() {
@@ -19,7 +20,7 @@ func ExampleGo() {
 func ExampleGo_panic() {
 	f := async.Go(func() (int, error) { panic("boom") })
 	_, err := f.Await()
-	var pe *async.PanicError
+	var pe *conc.PanicError
 	fmt.Println(errors.As(err, &pe), pe.Value)
 	// Output: true boom
 }

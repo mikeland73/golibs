@@ -20,26 +20,21 @@ import (
 	"math/bits"
 	"slices"
 
-	"golang.org/x/exp/constraints"
+	"github.com/mikeland73/golibs/mathx"
 )
-
-// Number is the set of integer and floating-point types a Tree can hold.
-type Number interface {
-	constraints.Integer | constraints.Float
-}
 
 // Tree is a Fenwick tree over a fixed-length array of numbers.
 //
 // The zero value is an empty tree of length 0; use New or From to create a
 // tree with elements.
-type Tree[T Number] struct {
+type Tree[T mathx.Number] struct {
 	vals []T // current values
 	bit  []T // bit[j-1] is the sum of vals over (j - lowbit(j), j] (1-indexed)
 }
 
 // New returns a tree of length n with all values zero. It panics if n < 0.
 // O(n).
-func New[T Number](n int) *Tree[T] {
+func New[T mathx.Number](n int) *Tree[T] {
 	if n < 0 {
 		panic(fmt.Sprintf("fenwick: New called with negative length %d", n))
 	}
@@ -48,7 +43,7 @@ func New[T Number](n int) *Tree[T] {
 
 // From returns a tree holding a copy of vals. It builds the tree in O(n),
 // faster than n calls to Add. vals is not modified or retained.
-func From[T Number](vals []T) *Tree[T] {
+func From[T mathx.Number](vals []T) *Tree[T] {
 	n := len(vals)
 	t := &Tree[T]{vals: slices.Clone(vals), bit: slices.Clone(vals)}
 	if t.vals == nil {

@@ -1,6 +1,6 @@
 // Package grid provides helpers for 2D grids and matrices represented as
 // [][]T: allocation, copying, transposition and rotation, bounds-checked
-// neighbor iteration, and pretty printing.
+// neighbor iteration. To pretty-print a grid use pp.Grid or pp.SprintGrid.
 //
 //	g := grid.FromStrings([]string{
 //		"#..",
@@ -9,7 +9,7 @@
 //	for nr, nc := range grid.Neighbors4(g, 0, 1) {
 //		fmt.Println(nr, nc, string(g[nr][nc]))
 //	}
-//	fmt.Println(grid.String(grid.RotateCW(g)))
+//	pp.Grid(grid.RotateCW(g)) // pretty-print (github.com/mikeland73/golibs/pp)
 //
 // Rows are indexed first: g[r][c]. Transpose, RotateCW and RotateCCW need a
 // rectangular grid and panic otherwise; the other functions also work on
@@ -19,8 +19,8 @@ package grid
 import (
 	"fmt"
 	"iter"
-	"strings"
-	"unicode/utf8"
+
+	"github.com/mikeland73/golibs/mathx"
 )
 
 // Point is a cell position: row R and column C.
@@ -36,7 +36,7 @@ func (p Point) Add(o Point) Point {
 
 // Manhattan returns the Manhattan (taxicab) distance |p.R-o.R| + |p.C-o.C|.
 func (p Point) Manhattan(o Point) int {
-	return abs(p.R-o.R) + abs(p.C-o.C)
+	return mathx.Abs(p.R-o.R) + mathx.Abs(p.C-o.C)
 }
 
 // Dirs4 holds the four orthogonal directions in clockwise order starting
@@ -198,62 +198,6 @@ func Find[T comparable](g [][]T, v T) (Point, bool) {
 	return Point{}, false
 }
 
-// String formats g for debugging, one line per row with no trailing newline.
-// A [][]byte or [][]rune grid is printed as characters with no separators,
-// e.g. "#.#\n..#". Any other grid is printed with its cells formatted by
-// fmt.Sprint, right-aligned in columns separated by a space:
-//
-//	 1 20  3
-//	40  5  6
-func String[T any](g [][]T) string {
-	var sb strings.Builder
-	switch g := any(g).(type) {
-	case [][]byte:
-		for r, row := range g {
-			if r > 0 {
-				sb.WriteByte('\n')
-			}
-			sb.Write(row)
-		}
-		return sb.String()
-	case [][]rune:
-		for r, row := range g {
-			if r > 0 {
-				sb.WriteByte('\n')
-			}
-			sb.WriteString(string(row))
-		}
-		return sb.String()
-	}
-
-	cells := make([][]string, len(g))
-	var widths []int
-	for r, row := range g {
-		cells[r] = make([]string, len(row))
-		for c, v := range row {
-			s := fmt.Sprint(v)
-			cells[r][c] = s
-			if c == len(widths) {
-				widths = append(widths, 0)
-			}
-			widths[c] = max(widths[c], utf8.RuneCountInString(s))
-		}
-	}
-	for r, row := range cells {
-		if r > 0 {
-			sb.WriteByte('\n')
-		}
-		for c, s := range row {
-			if c > 0 {
-				sb.WriteByte(' ')
-			}
-			sb.WriteString(strings.Repeat(" ", widths[c]-utf8.RuneCountInString(s)))
-			sb.WriteString(s)
-		}
-	}
-	return sb.String()
-}
-
 // dims returns the dimensions of g and panics if g is not rectangular.
 func dims[T any](g [][]T, fn string) (rows, cols int) {
 	if len(g) == 0 {
@@ -266,11 +210,4 @@ func dims[T any](g [][]T, fn string) (rows, cols int) {
 		}
 	}
 	return rows, cols
-}
-
-func abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
 }

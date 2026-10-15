@@ -3,7 +3,7 @@
 // such as All, AllSettled, Race, Any and Then.
 //
 // Unlike lo.Async, which returns a bare channel, a Future carries an error,
-// recovers panics (as *PanicError), can be awaited any number of times from
+// recovers panics (as *conc.PanicError), can be awaited any number of times from
 // any number of goroutines, and can be awaited with a context:
 //
 //	user := async.Go(func() (User, error) { return fetchUser(id) })
@@ -26,37 +26,14 @@ package async
 import (
 	"context"
 	"errors"
-	"fmt"
 	"runtime/debug"
+
+	"github.com/mikeland73/golibs/conc"
 )
 
 // ErrNoFutures is returned by Race and Any when called without any futures,
 // since there is no value that could ever settle them.
 var ErrNoFutures = errors.New("async: no futures")
-
-// PanicError is the error a Future is rejected with when its function panics.
-type PanicError struct {
-	// Value is the value passed to panic.
-	Value any
-	// Stack is the stack trace of the panicking goroutine, as returned by
-	// runtime/debug.Stack.
-	Stack []byte
-}
-
-// Error implements the error interface. It reports the panic value but not
-// the stack; use the Stack field for that.
-func (e *PanicError) Error() string {
-	return fmt.Sprintf("async: panic: %v", e.Value)
-}
-
-// Unwrap returns the panic value if it is an error, so that errors.Is and
-// errors.As can see through a PanicError. Otherwise it returns nil.
-func (e *PanicError) Unwrap() error {
-	if err, ok := e.Value.(error); ok {
-		return err
-	}
-	return nil
-}
 
 // errGoexit is used when fn calls runtime.Goexit (e.g. via t.FailNow) so the
 // future still settles instead of blocking its waiters forever.
@@ -83,13 +60,13 @@ func newFuture[T any]() *Future[T] {
 	return &Future[T]{done: make(chan struct{})}
 }
 
-// run calls fn, recording its result (or a *PanicError) and settling f.
+// run calls fn, recording its result (or a *conc.PanicError) and settling f.
 func (f *Future[T]) run(fn func() (T, error)) {
 	normal := false
 	defer func() {
 		if !normal {
 			if r := recover(); r != nil {
-				f.err = &PanicError{Value: r, Stack: debug.Stack()}
+				f.err = &conc.PanicError{Value: r, Stack: debug.Stack()}
 			} else {
 				f.err = errGoexit
 			}
@@ -101,7 +78,7 @@ func (f *Future[T]) run(fn func() (T, error)) {
 }
 
 // Go runs fn in a new goroutine and returns a Future for its result. If fn
-// panics the Future is rejected with a *PanicError.
+// panics the Future is rejected with a *conc.PanicError.
 func Go[T any](fn func() (T, error)) *Future[T] {
 	f := newFuture[T]()
 	go f.run(fn)
@@ -112,7 +89,7 @@ func Go[T any](fn func() (T, error)) *Future[T] {
 // If ctx is already done, fn is not called and the Future is rejected with
 // ctx.Err(). Otherwise the Future settles when fn returns; fn is responsible
 // for honoring cancellation of ctx. If fn panics the Future is rejected with a
-// *PanicError.
+// *conc.PanicError.
 func GoCtx[T any](ctx context.Context, fn func(context.Context) (T, error)) *Future[T] {
 	if err := ctx.Err(); err != nil {
 		return Rejected[T](err)
@@ -172,7 +149,7 @@ func (f *Future[T]) Done() <-chan struct{} {
 // Then returns a Future that, once f resolves successfully, runs fn on its
 // value. If f is rejected, the returned Future is rejected with the same
 // error and fn is not called. A panic in fn rejects the returned Future with a
-// *PanicError.
+// *conc.PanicError.
 //
 // The goroutine started by Then lives until f settles.
 func Then[T, R any](f *Future[T], fn func(T) (R, error)) *Future[R] {

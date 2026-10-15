@@ -10,6 +10,8 @@ import (
 	"testing"
 	"testing/synctest"
 	"time"
+
+	"github.com/mikeland73/golibs/conc"
 )
 
 var (
@@ -81,9 +83,9 @@ func TestAwaitManyGoroutines(t *testing.T) {
 func TestPanicRecovered(t *testing.T) {
 	t.Parallel()
 	_, err := Go(func() (int, error) { panic("boom") }).Await()
-	var pe *PanicError
+	var pe *conc.PanicError
 	if !errors.As(err, &pe) {
-		t.Fatalf("err = %v (%T); want *PanicError", err, err)
+		t.Fatalf("err = %v (%T); want *conc.PanicError", err, err)
 	}
 	if pe.Value != "boom" {
 		t.Errorf("Value = %v", pe.Value)
@@ -91,7 +93,7 @@ func TestPanicRecovered(t *testing.T) {
 	if !strings.Contains(string(pe.Stack), "TestPanicRecovered") {
 		t.Errorf("stack does not mention test function:\n%s", pe.Stack)
 	}
-	if got := err.Error(); got != "async: panic: boom" {
+	if got := err.Error(); got != "panic: boom" {
 		t.Errorf("Error() = %q", got)
 	}
 	if pe.Unwrap() != nil {
@@ -185,7 +187,7 @@ func TestThen(t *testing.T) {
 	}
 
 	_, err = Then(Resolved(1), func(int) (int, error) { panic("then") }).Await()
-	var pe *PanicError
+	var pe *conc.PanicError
 	if !errors.As(err, &pe) || pe.Value != "then" {
 		t.Fatalf("err = %v", err)
 	}
@@ -250,7 +252,7 @@ func TestAllSettled(t *testing.T) {
 		if len(res) != 3 || res[0] != (Result[int]{Value: 1}) || !errors.Is(res[1].Err, errA) {
 			t.Fatalf("res = %+v", res)
 		}
-		var pe *PanicError
+		var pe *conc.PanicError
 		if !errors.As(res[2].Err, &pe) {
 			t.Fatalf("res[2] = %+v", res[2])
 		}

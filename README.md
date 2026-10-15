@@ -5,8 +5,6 @@ concurrency utilities, and printing/assertion helpers that fill gaps in the
 Go standard library.
 
 - **Go 1.26+.**
-- **Self-contained.** No package imports another package from this repo, so
-  each one stands alone.
 - **Does not overlap** with the standard library, `golang.org/x/...`, or
   [`samber/lo`](https://github.com/samber/lo). Where one of those already covers
   something, this README points to it instead (see [Not included](#not-included-and-where-to-find-it)).
@@ -55,7 +53,7 @@ pp.Debug(q, q.Len()) // [main.go:12] q = PriorityQueue[3 5], q.Len() = 2
 | Package | What it is |
 | --- | --- |
 | [`graph`](graph) | BFS (single and multi-source), DFS, shortest path, topological sort, Dijkstra, connected components, and adjacency-list builders. Works on explicit or implicit graphs through a `neighbors` function. |
-| [`grid`](grid) | 2D grid helpers: allocate/fill/clone, transpose/rotate, `Dirs4`/`Dirs8`, in-bounds neighbor iterators, pretty-printing. |
+| [`grid`](grid) | 2D grid helpers: allocate/fill/clone, transpose/rotate, `Dirs4`/`Dirs8`, in-bounds neighbor iterators. Print grids with `pp.Grid`. |
 | [`bisect`](bisect) | Python `bisect` (`Left`, `Right`, `Insort`) and predicate searches over a range (`FirstTrue`, `LastTrue`, `Float`). |
 | [`itertools`](itertools) | Permutations, combinations, product, power set, `NextPermutation`, prefix sums, sliding windows, run-length grouping. |
 | [`mathx`](mathx) | Integer math: `Abs`, `Pow`, `ModPow`, `GCD`/`LCM`, Python-style `FloorDiv`/`Mod`, `Isqrt`, primes, divisors, binomials, digits. |

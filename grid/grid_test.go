@@ -6,6 +6,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/mikeland73/golibs/mathx"
 )
 
 func TestNewAndFill(t *testing.T) {
@@ -163,7 +165,7 @@ func TestPoint(t *testing.T) {
 	}
 	seen := map[Point]bool{}
 	for _, d := range Dirs8 {
-		if d == (Point{}) || seen[d] || abs(d.R) > 1 || abs(d.C) > 1 {
+		if d == (Point{}) || seen[d] || mathx.Abs(d.R) > 1 || mathx.Abs(d.C) > 1 {
 			t.Errorf("bad Dirs8 entry %v", d)
 		}
 		seen[d] = true
@@ -266,27 +268,5 @@ func TestCellsAndFind(t *testing.T) {
 	}
 	if _, ok := Find[int](nil, 0); ok {
 		t.Errorf("Find in nil found")
-	}
-}
-
-func TestString(t *testing.T) {
-	tests := []struct {
-		name string
-		got  string
-		want string
-	}{
-		{"bytes", String(FromStrings([]string{"#.#", "..#"})), "#.#\n..#"},
-		{"runes", String([][]rune{[]rune("é."), []rune("☃x")}), "é.\n☃x"},
-		{"ints", String([][]int{{1, 20, 3}, {40, 5, -6}}), " 1 20  3\n40  5 -6"},
-		{"strings", String([][]string{{"a", "bbb"}, {"cc", "d"}}), " a bbb\ncc   d"},
-		{"bools", String([][]bool{{true, false}}), "true false"},
-		{"jagged", String([][]int{{1, 2}, {300}}), "  1 2\n300"},
-		{"empty", String[int](nil), ""},
-		{"empty rows", String([][]int{{}, {}}), "\n"},
-	}
-	for _, tt := range tests {
-		if tt.got != tt.want {
-			t.Errorf("%s: String =\n%q\nwant\n%q", tt.name, tt.got, tt.want)
-		}
 	}
 }

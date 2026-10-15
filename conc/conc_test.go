@@ -178,7 +178,7 @@ func TestMapPanic(t *testing.T) {
 	if !errors.As(err, &pe) || pe.Value != "two" {
 		t.Fatalf("err = %v (%T)", err, err)
 	}
-	if err.Error() != "conc: panic: two" {
+	if err.Error() != "panic: two" {
 		t.Errorf("Error() = %q", err.Error())
 	}
 	if !strings.Contains(string(pe.Stack), "TestMapPanic") {

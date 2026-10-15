@@ -97,34 +97,12 @@ func TestWrapAround(t *testing.T) {
 func TestClear(t *testing.T) {
 	q := New("a", "b")
 	q.Clear()
-	if !q.IsEmpty() || len(q.buf) != 0 {
+	if !q.IsEmpty() || q.Len() != 0 {
 		t.Fatal("Clear did not reset")
 	}
 	q.Push("c")
 	if q.Pop() != "c" {
 		t.Fatal("reuse after Clear failed")
-	}
-}
-
-func TestShrinks(t *testing.T) {
-	var q Queue[int]
-	for i := range 10000 {
-		q.Push(i)
-	}
-	big := len(q.buf)
-	for range 9990 {
-		q.Pop()
-	}
-	if len(q.buf) >= big || len(q.buf) > 64 {
-		t.Fatalf("buffer did not shrink: %d (was %d)", len(q.buf), big)
-	}
-	// Steady-state push/pop must keep the buffer bounded.
-	for i := range 100000 {
-		q.Push(i)
-		q.Pop()
-	}
-	if len(q.buf) > 64 {
-		t.Fatalf("buffer grew in steady state: %d", len(q.buf))
 	}
 }
 

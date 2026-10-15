@@ -44,6 +44,8 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	"github.com/mikeland73/golibs/pp"
 )
 
 // Mode selects what happens when an assertion fails.
@@ -166,93 +168,18 @@ func message(msgAndArgs []any) string {
 	return fmt.Sprint(msgAndArgs...)
 }
 
-// show formats a value for a failure message using Go syntax (%#v), with
-// non-nil pointers shown as &value rather than an address. A pointer that
-// leads back to itself (e.g. p := new(any); *p = p) is shown as <cycle>, and
-// a value containing itself through slices or maps (which %#v would recurse
-// into forever) as T{<cycle>}.
-func show(v any) string {
-	type ptrKey struct {
-		typ reflect.Type
-		ptr uintptr
-	}
-	var seen map[ptrKey]bool
-	prefix := ""
-	for {
-		rv := reflect.ValueOf(v)
-		if rv.Kind() != reflect.Pointer || rv.IsNil() {
-			break
-		}
-		k := ptrKey{rv.Type(), rv.Pointer()}
-		if seen[k] {
-			return prefix + "<cycle>"
-		}
-		if seen == nil {
-			seen = make(map[ptrKey]bool)
-		}
-		seen[k] = true
-		prefix += "&"
-		v = rv.Elem().Interface()
-	}
-	if hasCycle(reflect.ValueOf(v), make(map[visit]bool)) {
-		return prefix + fmt.Sprintf("%T{<cycle>}", v)
-	}
-	return prefix + fmt.Sprintf("%#v", v)
-}
-
-// hasCycle reports whether v contains itself through slices or maps, the
-// containers that %#v prints recursively (nested pointers are printed as
-// addresses, so they cannot cause a cycle). path holds the containers on the
-// current path.
-func hasCycle(v reflect.Value, path map[visit]bool) bool {
-	switch v.Kind() {
-	case reflect.Interface:
-		return !v.IsNil() && hasCycle(v.Elem(), path)
-	case reflect.Array:
-		for i := range v.Len() {
-			if hasCycle(v.Index(i), path) {
-				return true
-			}
-		}
-	case reflect.Struct:
-		for i := range v.NumField() {
-			if hasCycle(v.Field(i), path) {
-				return true
-			}
-		}
-	case reflect.Slice, reflect.Map:
-		if v.Len() == 0 {
-			return false
-		}
-		k := visit{a1: v.Pointer(), typ: v.Type()}
-		if v.Kind() == reflect.Slice {
-			k.n = v.Len()
-		}
-		if path[k] {
-			return true
-		}
-		path[k] = true
-		defer delete(path, k)
-		if v.Kind() == reflect.Slice {
-			for i := range v.Len() {
-				if hasCycle(v.Index(i), path) {
-					return true
-				}
-			}
-			return false
-		}
-		iter := v.MapRange()
-		for iter.Next() {
-			if hasCycle(iter.Key(), path) || hasCycle(iter.Value(), path) {
-				return true
-			}
-		}
-	}
-	return false
-}
+// show formats a value for a failure message with pp.Repr: readable,
+// deterministic and safe for values that contain themselves.
+func show(v any) string { return pp.Repr(v) }
 
 func gotWant(got, want any) []string {
-	return []string{"got:  " + show(got), "want: " + show(want)}
+	g, w := show(got), show(want)
+	if g == w {
+		// Same text, different values (e.g. int vs int64 inside an any):
+		// show the dynamic types too.
+		g, w = fmt.Sprintf("%s (%T)", g, got), fmt.Sprintf("%s (%T)", w, want)
+	}
+	return []string{"got:  " + g, "want: " + w}
 }
 
 // Equal asserts that got and want are deeply equal. It works like

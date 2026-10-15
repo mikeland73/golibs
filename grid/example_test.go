@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mikeland73/golibs/grid"
+	"github.com/mikeland73/golibs/pp"
 )
 
 // Number of islands with an explicit-stack flood fill.
@@ -42,21 +43,11 @@ func ExampleRotateCW() {
 		{1, 2, 3},
 		{4, 5, 6},
 	}
-	fmt.Println(grid.String(grid.RotateCW(g)))
+	pp.Grid(grid.RotateCW(g))
 	// Output:
 	// 4 1
 	// 5 2
 	// 6 3
-}
-
-func ExampleString() {
-	fmt.Println(grid.String(grid.FromStrings([]string{"#.#", ".#."})))
-	fmt.Println(grid.String([][]int{{1, 20}, {300, 4}}))
-	// Output:
-	// #.#
-	// .#.
-	//   1 20
-	// 300  4
 }
 
 func ExampleFind() {
@@ -76,7 +67,7 @@ func ExampleNeighbors8() {
 	for nr, nc := range grid.Neighbors8(g, 0, 0) {
 		g[nr][nc] = 1
 	}
-	fmt.Println(grid.String(g))
+	pp.Grid(g)
 	// Output:
 	// 0 1 0
 	// 1 1 0

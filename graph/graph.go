@@ -20,22 +20,17 @@
 package graph
 
 import (
-	"container/heap"
+	"cmp"
 	"iter"
 	"strconv"
 
-	"golang.org/x/exp/constraints"
+	"github.com/mikeland73/golibs/mathx"
+	"github.com/mikeland73/golibs/pq"
 )
-
-// Number is a constraint matching all integer and floating-point types.
-// It is used for edge weights.
-type Number interface {
-	constraints.Integer | constraints.Float
-}
 
 // Edge is a weighted edge to node To, as returned by the neighbors function
 // passed to Dijkstra.
-type Edge[T comparable, W Number] struct {
+type Edge[T comparable, W mathx.Number] struct {
 	To     T
 	Weight W
 }
@@ -273,14 +268,15 @@ func TopoSort[T comparable](nodes []T, neighbors func(T) []T) ([]T, bool) {
 // weight is negative.
 //
 // It uses a binary heap with lazy deletion: O((V + E) log E).
-func Dijkstra[T comparable, W Number](start T, neighbors func(T) []Edge[T, W]) (dist map[T]W, prev map[T]T) {
+func Dijkstra[T comparable, W mathx.Number](start T, neighbors func(T) []Edge[T, W]) (dist map[T]W, prev map[T]T) {
 	var zero W
 	dist = map[T]W{start: zero}
 	prev = make(map[T]T)
 	done := make(map[T]bool)
-	h := &distHeap[T, W]{{node: start, dist: zero}}
-	for h.Len() > 0 {
-		it := heap.Pop(h).(distItem[T, W])
+	h := pq.New(func(a, b distItem[T, W]) int { return cmp.Compare(a.dist, b.dist) })
+	h.Push(distItem[T, W]{node: start, dist: zero})
+	for !h.IsEmpty() {
+		it := h.Pop()
 		u := it.node
 		if done[u] {
 			continue
@@ -294,7 +290,7 @@ func Dijkstra[T comparable, W Number](start T, neighbors func(T) []Edge[T, W]) (
 			if old, ok := dist[e.To]; !ok || nd < old {
 				dist[e.To] = nd
 				prev[e.To] = u
-				heap.Push(h, distItem[T, W]{node: e.To, dist: nd})
+				h.Push(distItem[T, W]{node: e.To, dist: nd})
 			}
 		}
 	}
@@ -356,20 +352,7 @@ func ConnectedComponents[T comparable](nodes []T, neighbors func(T) []T) [][]T {
 	return comps
 }
 
-type distItem[T comparable, W Number] struct {
+type distItem[T comparable, W mathx.Number] struct {
 	node T
 	dist W
-}
-
-type distHeap[T comparable, W Number] []distItem[T, W]
-
-func (h distHeap[T, W]) Len() int           { return len(h) }
-func (h distHeap[T, W]) Less(i, j int) bool { return h[i].dist < h[j].dist }
-func (h distHeap[T, W]) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-func (h *distHeap[T, W]) Push(x any)        { *h = append(*h, x.(distItem[T, W])) }
-func (h *distHeap[T, W]) Pop() any {
-	old := *h
-	it := old[len(old)-1]
-	*h = old[:len(old)-1]
-	return it
 }

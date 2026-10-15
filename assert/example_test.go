@@ -29,8 +29,8 @@ func Example() {
 	fmt.Println("failures:", assert.Failures()-before)
 	// Output:
 	// assert.Equal failed at example_test.go:27: reverse of [1 2]
-	//   got:  []int{2, 1}
-	//   want: []int{1, 2}
+	//   got:  [2, 1]
+	//   want: [1, 2]
 	// failures: 1
 }
 
