@@ -26,8 +26,8 @@ type node[K comparable, V any] struct {
 	prev, next *node[K, V]
 }
 
-// Cache is a fixed-capacity LRU cache mapping keys of type K to values of type V.
-// Create one with New; the zero value is not usable.
+// Cache is a fixed-capacity LRU cache mapping keys of type K to values of type
+// V. Create one with New; the zero value is not usable.
 type Cache[K comparable, V any] struct {
 	capacity int
 	items    map[K]*node[K, V]
@@ -107,7 +107,8 @@ func (c *Cache[K, V]) Remove(k K) bool {
 	return true
 }
 
-// Contains reports whether k is in the cache without changing its recency. O(1).
+// Contains reports whether k is in the cache without changing its recency.
+// O(1).
 func (c *Cache[K, V]) Contains(k K) bool {
 	_, ok := c.items[k]
 	return ok
@@ -119,7 +120,8 @@ func (c *Cache[K, V]) Len() int { return len(c.items) }
 // Cap returns the maximum number of entries the cache can hold. O(1).
 func (c *Cache[K, V]) Cap() int { return c.capacity }
 
-// Clear removes all entries. O(1) (old entries are left to the garbage collector).
+// Clear removes all entries. O(1) (old entries are left to the garbage
+// collector).
 func (c *Cache[K, V]) Clear() {
 	c.items = make(map[K]*node[K, V])
 	c.root.next = &c.root

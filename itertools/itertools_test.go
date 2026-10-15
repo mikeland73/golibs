@@ -107,7 +107,8 @@ func TestCombinations(t *testing.T) {
 			if len(got) != wantLen {
 				t.Errorf("n=%d r=%d: len %d want %d", n, r, len(got), wantLen)
 			}
-			// Each result strictly increasing, results strictly lexicographically increasing.
+			// Each result strictly increasing, results strictly lexicographically
+			// increasing.
 			for i, c := range got {
 				if !slices.IsSorted(c) || len(slices.Compact(slices.Clone(c))) != len(c) {
 					t.Errorf("not increasing: %v", c)

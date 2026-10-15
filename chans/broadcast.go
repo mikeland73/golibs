@@ -123,11 +123,11 @@ func (b *Broadcaster[T]) Subscribe() (ch <-chan T, unsubscribe func()) {
 }
 
 // Publish delivers v to every current subscriber, blocking until each has
-// accepted it or ctx is done. The subscribers are those registered when
-// Publish is called: ones that subscribe meanwhile do not receive v, and ones
-// that unsubscribe meanwhile are skipped. It returns ctx.Err() if ctx is done first, in which case some
-// subscribers may have received v and others not, and ErrClosed if the
-// Broadcaster is closed.
+// accepted it or ctx is done. The subscribers are those registered when Publish
+// is called: ones that subscribe meanwhile do not receive v, and ones that
+// unsubscribe meanwhile are skipped. It returns ctx.Err() if ctx is done first,
+// in which case some subscribers may have received v and others not, and
+// ErrClosed if the Broadcaster is closed.
 func (b *Broadcaster[T]) Publish(ctx context.Context, v T) error {
 	subs, err := b.snapshot()
 	if err != nil {

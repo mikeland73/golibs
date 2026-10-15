@@ -135,10 +135,10 @@ func FirstTrue[T Integer](lo, hi T, pred func(T) bool) T {
 	return hi
 }
 
-// LastTrue returns the largest x in [lo, hi) for which pred(x) is true, or
-// lo-1 if there is none. pred must be monotone over the range: true for every
-// x up to some threshold and false after it (true, ..., true, false, ..., false).
-// If hi <= lo it returns lo-1 without calling pred.
+// LastTrue returns the largest x in [lo, hi) for which pred(x) is true, or lo-1
+// if there is none. pred must be monotone over the range: true for every x up
+// to some threshold and false after it (true, ..., true, false, ..., false). If
+// hi <= lo it returns lo-1 without calling pred.
 //
 // Note that lo-1 wraps around if lo is the minimum value of T (for example 0
 // for unsigned types); pick lo so that lo-1 is representable if you need to

@@ -8,7 +8,8 @@
 //	s.Pop()  // 3
 //	s.Len()  // 2
 //
-// Push, Pop and Peek are amortized O(1). A Stack is not safe for concurrent use.
+// Push, Pop and Peek are amortized O(1). A Stack is not safe for concurrent
+// use.
 package stack
 
 import (
@@ -24,7 +25,8 @@ type Stack[T any] struct {
 	data []T // bottom at index 0, top at the end
 }
 
-// New returns a stack containing vals, pushed in order (the last value is on top).
+// New returns a stack containing vals, pushed in order (the last value is on
+// top).
 func New[T any](vals ...T) *Stack[T] {
 	return &Stack[T]{data: slices.Clone(vals)}
 }
@@ -35,7 +37,8 @@ func (s *Stack[T]) Push(vals ...T) {
 	s.data = append(s.data, vals...)
 }
 
-// Pop removes and returns the top element. It panics if the stack is empty. O(1).
+// Pop removes and returns the top element. It panics if the stack is empty.
+// O(1).
 func (s *Stack[T]) Pop() T {
 	v, ok := s.TryPop()
 	if !ok {

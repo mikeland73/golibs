@@ -2,6 +2,7 @@ package pq
 
 import (
 	"cmp"
+	"math"
 	"math/rand/v2"
 	"slices"
 	"strings"
@@ -373,4 +374,74 @@ func TestNLargestNSmallestStable(t *testing.T) {
 			t.Errorf("%s: got %v, want %v", tt.name, tt.got, tt.want)
 		}
 	}
+}
+
+func TestZeroValue(t *testing.T) {
+	var ints PriorityQueue[int]
+	ints.Push(5, 1, 4, 2, 3)
+	if got := ints.Peek(); got != 1 {
+		t.Fatalf("Peek = %d, want 1", got)
+	}
+	for want := 1; want <= 5; want++ {
+		if got := ints.Pop(); got != want {
+			t.Fatalf("Pop = %d, want %d", got, want)
+		}
+	}
+
+	var strs PriorityQueue[string]
+	strs.Push("pear", "apple", "fig")
+	if got := strs.String(); got != "PriorityQueue[apple fig pear]" {
+		t.Fatalf("String = %q", got)
+	}
+
+	// Named ordered types go through the reflection path.
+	type dist int
+	type name string
+	type temp float32
+	var d PriorityQueue[dist]
+	d.Push(3, -1, 2)
+	if got := d.Pop(); got != -1 {
+		t.Fatalf("named int Pop = %d, want -1", got)
+	}
+	var n PriorityQueue[name]
+	n.Push("b", "a")
+	if got := n.Pop(); got != "a" {
+		t.Fatalf("named string Pop = %q, want a", got)
+	}
+	var u PriorityQueue[uint8]
+	u.Push(200, 7)
+	if got := u.Pop(); got != 7 {
+		t.Fatalf("uint8 Pop = %d, want 7", got)
+	}
+	// Floats order like cmp.Compare: NaN first.
+	var f PriorityQueue[temp]
+	f.Push(2.5, temp(math.NaN()), -1)
+	if got := f.Pop(); !math.IsNaN(float64(got)) {
+		t.Fatalf("float Pop = %v, want NaN", got)
+	}
+	if got := f.Pop(); got != -1 {
+		t.Fatalf("float Pop = %v, want -1", got)
+	}
+
+	// PushPop works on an empty zero-value queue too.
+	var pp PriorityQueue[int]
+	if got := pp.PushPop(3); got != 3 {
+		t.Fatalf("PushPop = %d, want 3", got)
+	}
+}
+
+func TestZeroValueNonOrderedPanics(t *testing.T) {
+	type point struct{ x, y int }
+	var q PriorityQueue[point]
+	if got := q.String(); got != "PriorityQueue[]" {
+		t.Fatalf("String on empty queue = %q", got)
+	}
+	defer func() {
+		r := recover()
+		msg, _ := r.(string)
+		if !strings.Contains(msg, "pq.New") {
+			t.Fatalf("panic = %v, want a message pointing to pq.New", r)
+		}
+	}()
+	q.Push(point{1, 2})
 }

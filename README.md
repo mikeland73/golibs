@@ -22,7 +22,7 @@ import (
 	"github.com/mikeland73/golibs/pp"
 )
 
-q := pq.NewMin[int]()
+var q pq.PriorityQueue[int] // zero value is a min-queue
 q.Push(5, 1, 3)
 q.Peek() // 1
 q.Pop()  // 1
@@ -36,7 +36,7 @@ pp.Debug(q, q.Len()) // [main.go:12] q = PriorityQueue[3 5], q.Len() = 2
 
 | Package | What it is |
 | --- | --- |
-| [`pq`](pq) | Generic binary-heap priority queue with `Peek`, `PushPop`, `Replace`, plus `NLargest` / `NSmallest` (Python `heapq`). |
+| [`pq`](pq) | Generic binary-heap priority queue with `Peek`, `PushPop`, `Replace`, plus `NLargest` / `NSmallest` (Python `heapq`). The zero value is a min-queue for ordered types. |
 | [`stack`](stack) | LIFO stack. Zero value ready. |
 | [`queue`](queue) | FIFO queue on a ring buffer (amortized O(1), shrinks when drained). |
 | [`deque`](deque) | Double-ended queue with indexing and `Rotate` (Python `collections.deque`). |
@@ -128,3 +128,7 @@ devbox run check      # fmt-check + lint + test (what CI runs)
 
 CI (`.github/workflows/ci.yml`) runs the formatting check, the linter and the
 unit tests on every pull request and on every push to `main`.
+
+## License
+
+[Apache 2.0](LICENSE)

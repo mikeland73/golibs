@@ -3,7 +3,7 @@
 //
 // Unlike container/heap, there is no interface to implement and no boxing:
 //
-//	q := pq.NewMin[int]()
+//	var q pq.PriorityQueue[int] // zero value: min-queue for ordered types
 //	q.Push(5, 1, 3)
 //	q.Peek() // 1
 //	q.Pop()  // 1
@@ -16,6 +16,8 @@
 //	type task struct{ name string; prio int }
 //	q := pq.New(func(a, b task) int { return cmp.Compare(b.prio, a.prio) }) // highest prio first
 //
+// NewMax gives a max-queue for ordered types.
+//
 // A PriorityQueue is not safe for concurrent use.
 package pq
 
@@ -23,6 +25,7 @@ import (
 	"cmp"
 	"fmt"
 	"iter"
+	"reflect"
 	"slices"
 	"strings"
 )
@@ -30,7 +33,11 @@ import (
 // PriorityQueue is a binary min-heap ordered by a comparator. The element
 // that compares smallest according to the comparator is at the top.
 //
-// The zero value is not usable; create queues with New, NewMin, NewMax or From.
+// The zero value is an empty min-queue when T is an ordered type (an integer,
+// float or string type, including named types such as `type dist int`),
+// ordered like cmp.Compare. For other element types, or for a different
+// order, create queues with New, NewMax or From; pushing onto a zero-value
+// queue of a non-ordered type panics.
 type PriorityQueue[T any] struct {
 	data []T
 	cmp  func(a, b T) int
@@ -72,6 +79,7 @@ func From[T any](items []T, cmp func(a, b T) int) *PriorityQueue[T] {
 
 // Push adds vals to the queue. O(log n) per value.
 func (q *PriorityQueue[T]) Push(vals ...T) {
+	q.order() // a zero-value queue of a non-ordered type panics here
 	for _, v := range vals {
 		q.data = append(q.data, v)
 		q.up(len(q.data) - 1)
@@ -131,7 +139,7 @@ func (q *PriorityQueue[T]) TryPeek() (T, bool) {
 // would be the new top it is returned immediately without touching the heap.
 // Works on an empty queue (returns x). O(log n).
 func (q *PriorityQueue[T]) PushPop(x T) T {
-	if len(q.data) == 0 || q.cmp(x, q.data[0]) <= 0 {
+	if len(q.data) == 0 || q.order()(x, q.data[0]) <= 0 {
 		return x
 	}
 	top := q.data[0]
@@ -186,11 +194,13 @@ func (q *PriorityQueue[T]) ToSlice() []T {
 	return slices.Clone(q.data)
 }
 
-// String returns the elements in sorted (priority) order, e.g. "PriorityQueue[1 2 3]".
-// It does not modify the queue. O(n log n).
+// String returns the elements in sorted (priority) order, e.g. "PriorityQueue[1
+// 2 3]". It does not modify the queue. O(n log n).
 func (q *PriorityQueue[T]) String() string {
 	s := slices.Clone(q.data)
-	slices.SortStableFunc(s, q.cmp)
+	if len(s) > 1 {
+		slices.SortStableFunc(s, q.order())
+	}
 	var b strings.Builder
 	b.WriteString("PriorityQueue[")
 	for i, v := range s {
@@ -203,12 +213,22 @@ func (q *PriorityQueue[T]) String() string {
 	return b.String()
 }
 
+// order returns the queue's comparator, defaulting a zero-value queue to
+// ascending order for ordered element types.
+func (q *PriorityQueue[T]) order() func(a, b T) int {
+	if q.cmp == nil {
+		q.cmp = defaultCompare[T]()
+	}
+	return q.cmp
+}
+
 func (q *PriorityQueue[T]) up(i int) {
+	cmp := q.order()
 	d := q.data
 	x := d[i]
 	for i > 0 {
 		p := (i - 1) / 2
-		if q.cmp(x, d[p]) >= 0 {
+		if cmp(x, d[p]) >= 0 {
 			break
 		}
 		d[i] = d[p]
@@ -218,6 +238,7 @@ func (q *PriorityQueue[T]) up(i int) {
 }
 
 func (q *PriorityQueue[T]) down(i int) {
+	cmp := q.order()
 	d := q.data
 	n := len(d)
 	x := d[i]
@@ -226,10 +247,10 @@ func (q *PriorityQueue[T]) down(i int) {
 		if c >= n {
 			break
 		}
-		if r := c + 1; r < n && q.cmp(d[r], d[c]) < 0 {
+		if r := c + 1; r < n && cmp(d[r], d[c]) < 0 {
 			c = r
 		}
-		if q.cmp(x, d[c]) <= 0 {
+		if cmp(x, d[c]) <= 0 {
 			break
 		}
 		d[i] = d[c]
@@ -316,4 +337,65 @@ func best[T any](s []T, k int, order func(a, b indexed[T]) int) []T {
 		res[i] = x.v
 	}
 	return res
+}
+
+// defaultCompare returns a cmp.Compare-style comparator for T if T's
+// underlying type is an integer, float or string type, and panics otherwise.
+func defaultCompare[T any]() func(a, b T) int {
+	// Fast path: T is one of the predeclared ordered types.
+	var c any
+	switch any(*new(T)).(type) {
+	case int:
+		c = cmp.Compare[int]
+	case int8:
+		c = cmp.Compare[int8]
+	case int16:
+		c = cmp.Compare[int16]
+	case int32:
+		c = cmp.Compare[int32]
+	case int64:
+		c = cmp.Compare[int64]
+	case uint:
+		c = cmp.Compare[uint]
+	case uint8:
+		c = cmp.Compare[uint8]
+	case uint16:
+		c = cmp.Compare[uint16]
+	case uint32:
+		c = cmp.Compare[uint32]
+	case uint64:
+		c = cmp.Compare[uint64]
+	case uintptr:
+		c = cmp.Compare[uintptr]
+	case float32:
+		c = cmp.Compare[float32]
+	case float64:
+		c = cmp.Compare[float64]
+	case string:
+		c = cmp.Compare[string]
+	}
+	if c != nil {
+		return c.(func(a, b T) int)
+	}
+	// Named types (e.g. `type dist int`) go through reflection.
+	t := reflect.TypeFor[T]()
+	switch t.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return func(a, b T) int {
+			return cmp.Compare(reflect.ValueOf(a).Int(), reflect.ValueOf(b).Int())
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return func(a, b T) int {
+			return cmp.Compare(reflect.ValueOf(a).Uint(), reflect.ValueOf(b).Uint())
+		}
+	case reflect.Float32, reflect.Float64:
+		return func(a, b T) int {
+			return cmp.Compare(reflect.ValueOf(a).Float(), reflect.ValueOf(b).Float())
+		}
+	case reflect.String:
+		return func(a, b T) int {
+			return cmp.Compare(reflect.ValueOf(a).String(), reflect.ValueOf(b).String())
+		}
+	}
+	panic(fmt.Sprintf("pq: zero-value PriorityQueue[%v] needs an ordered element type; create it with pq.New and a comparator", t))
 }
