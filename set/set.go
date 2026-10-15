@@ -105,8 +105,8 @@ func (s Set[T]) Clone() Set[T] {
 	return maps.Clone(s)
 }
 
-// Union returns a new set with the elements of s and all others (s |
-// others...). O(len(s) + sum of len(others)).
+// Union returns a new set with the elements of s and all others
+// (s | others...). O(len(s) + sum of len(others)).
 func (s Set[T]) Union(others ...Set[T]) Set[T] {
 	res := s.Clone()
 	for _, o := range others {

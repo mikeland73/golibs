@@ -20,15 +20,6 @@ func ExampleNewMin() {
 	// 1 2 4 5
 }
 
-func ExamplePriorityQueue_zeroValue() {
-	// The zero value is a min-queue for ordered element types.
-	var q pq.PriorityQueue[string]
-	q.Push("pear", "apple", "fig")
-	fmt.Println(q.Peek(), q.Len())
-	// Output:
-	// apple 3
-}
-
 func ExampleNew() {
 	type job struct {
 		name     string

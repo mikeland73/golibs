@@ -147,8 +147,8 @@ func (c Counter[T]) Elements() []T {
 	return out
 }
 
-// String returns the entries in MostCommon order, e.g. "Counter{a: 5, b: 2, r:
-// 2}". O(m log m).
+// String returns the entries in MostCommon order, e.g.
+// "Counter{a: 5, b: 2, r: 2}". O(m log m).
 func (c Counter[T]) String() string {
 	var b strings.Builder
 	b.WriteString("Counter{")

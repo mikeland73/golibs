@@ -162,8 +162,8 @@ func (q *Queue[T]) copyTo(dst []T) {
 	copy(dst[k:], q.buf[:end-len(q.buf)])
 }
 
-// resize moves the elements into a new buffer of capacity c (a power of two >=
-// q.n).
+// resize moves the elements into a new buffer of capacity c (a power of
+// two >= q.n).
 func (q *Queue[T]) resize(c int) {
 	buf := make([]T, c)
 	q.copyTo(buf)

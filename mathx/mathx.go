@@ -158,8 +158,8 @@ func LCM[T Integer](a, b T) T {
 }
 
 // FloorDiv returns a/b rounded toward negative infinity, like Python's a // b.
-// Go's a / b truncates toward zero instead: -7/2 == -3 but FloorDiv(-7, 2) ==
-// -4. It panics if b == 0.
+// Go's a / b truncates toward zero instead: -7/2 == -3 but
+// FloorDiv(-7, 2) == -4. It panics if b == 0.
 func FloorDiv[T Integer](a, b T) T {
 	q := a / b
 	if a%b != 0 && (a < 0) != (b < 0) {
